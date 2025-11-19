@@ -322,13 +322,15 @@
       <span class="auth-logged-in-email" id="auth-user-email"></span>
     </div>
     <div>
-      <form id="auth-form" class="auth-form">
-        <input type="email" id="auth-email" placeholder="Email" autocomplete="email" />
-        <input type="password" id="auth-password" placeholder="Password" autocomplete="current-password" />
-        <button type="submit" id="auth-submit">Sign in / Sign up</button>
-        <button type="button" id="auth-logout" class="auth-logout-btn" style="display:none;">Log out</button>
-      </form>
-      <div class="auth-meta" id="auth-status">Not signed in.</div>
+<form id="auth-form" class="auth-form">
+  <input type="email" id="auth-email" placeholder="Email" autocomplete="email" />
+  <input type="password" id="auth-password" placeholder="Password" autocomplete="current-password" />
+  <button type="button" id="auth-signin">Sign in</button>
+  <button type="button" id="auth-signup">Sign up</button>
+  <button type="button" id="auth-logout" class="auth-logout-btn" style="display:none;">Log out</button>
+</form>
+<div class="auth-meta" id="auth-status">Not signed in.</div>
+
     </div>
   </header>
 
@@ -661,46 +663,89 @@ apiKey: "AIzaSyBT47xFIZAg9mk9zlSFVwq1orpjqco2Qb8",
       }
     });
 
-    authForm.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const email = authEmail.value.trim();
-      const password = authPassword.value;
+ function setAuthBusy(isBusy) {
+  const btns = [authSignInBtn, authSignUpBtn];
+  btns.forEach(b => b.disabled = !!isBusy);
+}
 
-      if (!email || !password) {
-        authStatus.textContent = "Enter email and password.";
-        return;
+const authSignInBtn = document.getElementById("auth-signin");
+const authSignUpBtn = document.getElementById("auth-signup");
+
+authSignInBtn.addEventListener("click", () => {
+  const email = authEmail.value.trim();
+  const password = authPassword.value;
+
+  if (!email || !password) {
+    authStatus.textContent = "Enter email and password.";
+    return;
+  }
+
+  setAuthBusy(true);
+  authStatus.textContent = "Signing in...";
+
+  auth
+    .signInWithEmailAndPassword(email, password)
+    .then(() => {
+      authStatus.textContent = "Signed in.";
+    })
+    .catch((err) => {
+      console.error("Sign-in error:", err);
+
+      if (err.code === "auth/too-many-requests") {
+        authStatus.textContent =
+          "Too many attempts from this device. Try again later or use another browser/device.";
+      } else if (
+        err.code === "auth/user-not-found" ||
+        err.code === "auth/invalid-credential" ||
+        err.code === "auth/invalid-login-credentials"
+      ) {
+        authStatus.textContent = "No account found for that email. Use 'Sign up' first.";
+      } else if (err.code === "auth/wrong-password") {
+        authStatus.textContent = "Incorrect password.";
+      } else {
+        authStatus.textContent = err.message || "Authentication error.";
       }
+    })
+    .finally(() => setAuthBusy(false));
+});
 
-      authStatus.textContent = "Signing in...";
+authSignUpBtn.addEventListener("click", () => {
+  const email = authEmail.value.trim();
+  const password = authPassword.value;
 
-      auth.signInWithEmailAndPassword(email, password)
-        .then(() => {
-          authStatus.textContent = "Signed in.";
-        })
-        .catch((err) => {
-          if (err.code === "auth/user-not-found") {
-            // Auto sign up if user doesn’t exist
-            authStatus.textContent = "No account found. Creating one...";
-            return auth.createUserWithEmailAndPassword(email, password);
-          } else {
-            throw err;
-          }
-        })
-        .then((res) => {
-          if (!res) return;
-          authStatus.textContent = "Account created and signed in.";
-        })
-        .catch((err) => {
-          console.error("Auth error:", err);
-          authStatus.textContent = err.message || "Authentication error.";
-        });
-    });
+  if (!email || !password) {
+    authStatus.textContent = "Enter email and password to create an account.";
+    return;
+  }
 
-    authLogout.addEventListener("click", () => {
-      auth.signOut().catch((err) => {
-        console.error("Logout error:", err);
-      });
-    });
+  setAuthBusy(true);
+  authStatus.textContent = "Creating account...";
+
+  auth
+    .createUserWithEmailAndPassword(email, password)
+    .then(() => {
+      authStatus.textContent = "Account created and signed in.";
+    })
+    .catch((err) => {
+      console.error("Sign-up error:", err);
+
+      if (err.code === "auth/email-already-in-use") {
+        authStatus.textContent = "That email already has an account. Use 'Sign in' instead.";
+      } else if (err.code === "auth/weak-password") {
+        authStatus.textContent = "Password is too weak. Try something longer/stronger.";
+      } else {
+        authStatus.textContent = err.message || "Could not create account.";
+      }
+    })
+    .finally(() => setAuthBusy(false));
+});
+
+authLogout.addEventListener("click", () => {
+  auth.signOut().catch((err) => {
+    console.error("Logout error:", err);
+  });
+});
+
 
     // --- Journal event listeners ---
     document.getElementById("prev-day").addEventListener("click", () => {
