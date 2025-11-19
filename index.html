@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Daily Journal</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      margin: 0;
+      padding: 0;
+      color: #222;
+      display: flex;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      width: 260px;
+      max-width: 40%;
+      background: #ffffff;
+      border-right: 1px solid #ddd;
+      padding: 16px;
+      box-sizing: border-box;
+      overflow-y: auto;
+    }
+
+    .main {
+      flex: 1;
+      padding: 24px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 20px;
+    }
+
+    h2 {
+      margin: 0 0 8px;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    button {
+      cursor: pointer;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      background: #fff;
+      padding: 6px 10px;
+      font-size: 13px;
+    }
+
+    button.primary {
+      background: #222;
+      color: #fff;
+      border-color: #222;
+    }
+
+    button.danger {
+      background: #fff0f0;
+      color: #b00020;
+      border-color: #b00020;
+    }
+
+    button + button {
+      margin-left: 6px;
+    }
+
+    .date-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .date-display {
+      font-weight: 500;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 4px;
+      font-weight: 500;
+    }
+
+    textarea {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 8px;
+      font-size: 14px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .field {
+      margin-bottom: 12px;
+    }
+
+    .entry-list {
+      list-style: none;
+      padding: 0;
+      margin: 8px 0 0;
+      font-size: 14px;
+    }
+
+    .entry-list li {
+      margin-bottom: 4px;
+    }
+
+    .entry-list button {
+      width: 100%;
+      text-align: left;
+      border: none;
+      background: none;
+      padding: 4px 0;
+      border-radius: 0;
+    }
+
+    .entry-list button:hover {
+      text-decoration: underline;
+    }
+
+    .meta {
+      font-size: 12px;
+      color: #666;
+      margin-top: 4px;
+    }
+
+    .mood-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .mood-group label {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-weight: 400;
+      font-size: 12px;
+      margin-bottom: 0;
+    }
+
+    .char-counter {
+      font-size: 12px;
+      color: #666;
+      text-align: right;
+      margin-top: 2px;
+    }
+
+    .form-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        flex-direction: column;
+      }
+      .sidebar {
+        width: 100%;
+        max-width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #ddd;
+        max-height: 200px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <ul class="entry-list" id="entry-list"></ul>
+  </aside>
+
+  <main class="main">
+    <header class="date-nav">
+      <div>
+        <button type="button" id="prev-day">&larr; Yesterday</button>
+      </div>
+      <div>
+        <span class="date-display" id="date-display"></span>
+        <button type="button" id="today-btn">Today</button>
+      </div>
+      <div>
+        <button type="button" id="next-day">Tomorrow &rarr;</button>
+      </div>
+    </header>
+
+    <section>
+      <form id="journal-form">
+        <!-- Mood as 1–10 radio buttons -->
+        <div class="field">
+          <label>Today I'm feeling...</label>
+          <div class="mood-group" id="mood-group">
+            <label><input type="radio" name="mood" value="1">1</label>
+            <label><input type="radio" name="mood" value="2">2</label>
+            <label><input type="radio" name="mood" value="3">3</label>
+            <label><input type="radio" name="mood" value="4">4</label>
+            <label><input type="radio" name="mood" value="5">5</label>
+            <label><input type="radio" name="mood" value="6">6</label>
+            <label><input type="radio" name="mood" value="7">7</label>
+            <label><input type="radio" name="mood" value="8">8</label>
+            <label><input type="radio" name="mood" value="9">9</label>
+            <label><input type="radio" name="mood" value="10">10</label>
+          </div>
+        </div>
+
+        <!-- What happened with 200 char limit -->
+        <div class="field">
+          <label for="highlights">What happened today?</label>
+          <textarea
+            id="highlights"
+            name="highlights"
+            maxlength="200"
+            placeholder="Just a short update."
+          ></textarea>
+          <div class="char-counter" id="highlights-counter">0 / 200</div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="primary" id="save-btn">That's all for today.</button>
+          <button type="button" class="danger" id="delete-btn">Delete today.</button>
+          <span class="meta" id="save-status"></span>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <script>
+    // --- Utilities ---
+    function pad(n) {
+      return n < 10 ? "0" + n : "" + n;
+    }
+
+    // Use local time instead of UTC to avoid off-by-one-day issues
+    function formatDate(date) {
+      return (
+        date.getFullYear() +
+        "-" +
+        pad(date.getMonth() + 1) +
+        "-" +
+        pad(date.getDate())
+      ); // YYYY-MM-DD in local time
+    }
+
+    function prettyDate(iso) {
+      const [year, month, day] = iso.split("-").map(Number);
+      const d = new Date(year, month - 1, day);
+      return d.toLocaleDateString(undefined, {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
+    }
+
+    function loadAllEntries() {
+      try {
+        return JSON.parse(localStorage.getItem("journalEntries")) || {};
+      } catch (e) {
+        return {};
+      }
+    }
+
+    function saveAllEntries(entries) {
+      localStorage.setItem("journalEntries", JSON.stringify(entries));
+    }
+
+    // --- State ---
+    let currentDate = new Date();
+
+    const dateDisplay = document.getElementById("date-display");
+    const entryListEl = document.getElementById("entry-list");
+    const saveStatus = document.getElementById("save-status");
+
+    const highlightsInput = document.getElementById("highlights");
+    const highlightsCounter = document.getElementById("highlights-counter");
+
+    const moodRadios = Array.from(
+      document.querySelectorAll('input[name="mood"]')
+    );
+
+    function getSelectedMood() {
+      const checked = moodRadios.find((r) => r.checked);
+      return checked ? checked.value : "";
+    }
+
+    function setSelectedMood(value) {
+      moodRadios.forEach((r) => {
+        r.checked = r.value === String(value);
+      });
+    }
+
+    function setCurrentDate(date) {
+      currentDate = date;
+      const iso = formatDate(currentDate);
+      dateDisplay.textContent = prettyDate(iso);
+      loadEntryForCurrentDate();
+    }
+
+    function loadEntryForCurrentDate() {
+      const iso = formatDate(currentDate);
+      const entries = loadAllEntries();
+      const entry = entries[iso] || {
+        mood: "",
+        highlights: ""
+      };
+
+      setSelectedMood(entry.mood || "");
+      highlightsInput.value = entry.highlights || "";
+      updateHighlightsCounter();
+
+      saveStatus.textContent = "";
+    }
+
+    function saveCurrentEntry() {
+      const iso = formatDate(currentDate);
+      const entries = loadAllEntries();
+
+      entries[iso] = {
+        mood: getSelectedMood(),
+        highlights: highlightsInput.value.trim(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      saveAllEntries(entries);
+      renderEntryList();
+      saveStatus.textContent = "Saved.";
+      setTimeout(() => {
+        if (saveStatus.textContent === "Saved.") {
+          saveStatus.textContent = "";
+        }
+      }, 2000);
+    }
+
+    function deleteCurrentEntry() {
+      const iso = formatDate(currentDate);
+      const entries = loadAllEntries();
+
+      if (!entries[iso]) {
+        saveStatus.textContent = "No entry to delete for this date.";
+        setTimeout(() => {
+          if (saveStatus.textContent === "No entry to delete for this date.") {
+            saveStatus.textContent = "";
+          }
+        }, 2000);
+        return;
+      }
+
+      const confirmed = window.confirm(
+        "Delete this entry for " + prettyDate(iso) + "?"
+      );
+      if (!confirmed) return;
+
+      delete entries[iso];
+      saveAllEntries(entries);
+
+      // Clear form for this date
+      setSelectedMood("");
+      highlightsInput.value = "";
+      updateHighlightsCounter();
+
+      renderEntryList();
+
+      saveStatus.textContent = "Entry deleted.";
+      setTimeout(() => {
+        if (saveStatus.textContent === "Entry deleted.") {
+          saveStatus.textContent = "";
+        }
+      }, 2000);
+    }
+
+    function renderEntryList() {
+      const entries = loadAllEntries();
+      const dates = Object.keys(entries).sort().reverse(); // newest first
+
+      entryListEl.innerHTML = "";
+      if (dates.length === 0) {
+        entryListEl.innerHTML =
+          '<li><span class="meta">No entries yet.</span></li>';
+        return;
+      }
+
+      dates.forEach((iso) => {
+        const li = document.createElement("li");
+        const btn = document.createElement("button");
+
+        const entry = entries[iso] || {};
+        const baseText = prettyDate(iso);
+
+        // If you had older entries with a notes field, this keeps them usable
+        const summarySource =
+          entry.highlights || entry.notes || "";
+        let summary = summarySource.trim();
+        if (summary.length > 40) {
+          summary = summary.slice(0, 40) + "…";
+        }
+
+        const displayText = summary
+          ? `${baseText} — ${summary}`
+          : baseText;
+
+        btn.textContent = displayText;
+
+        btn.addEventListener("click", () => {
+          const [y, m, d] = iso.split("-").map(Number);
+          setCurrentDate(new Date(y, m - 1, d));
+        });
+
+        li.appendChild(btn);
+        entryListEl.appendChild(li);
+      });
+    }
+
+    function updateHighlightsCounter() {
+      const len = highlightsInput.value.length;
+      highlightsCounter.textContent = `${len} / 200`;
+    }
+
+    // --- Event listeners ---
+    document.getElementById("prev-day").addEventListener("click", () => {
+      const d = new Date(currentDate);
+      d.setDate(d.getDate() - 1);
+      setCurrentDate(d);
+    });
+
+    document.getElementById("next-day").addEventListener("click", () => {
+      const d = new Date(currentDate);
+      d.setDate(d.getDate() + 1);
+      setCurrentDate(d);
+    });
+
+    document.getElementById("today-btn").addEventListener("click", () => {
+      setCurrentDate(new Date());
+    });
+
+    document.getElementById("save-btn").addEventListener("click", saveCurrentEntry);
+    document.getElementById("delete-btn").addEventListener("click", deleteCurrentEntry);
+
+    // Autosave on change
+    moodRadios.forEach((r) => {
+      r.addEventListener("change", saveCurrentEntry);
+    });
+
+    highlightsInput.addEventListener("input", () => {
+      updateHighlightsCounter();
+      saveCurrentEntry();
+    });
+
+    // --- Init ---
+    setCurrentDate(new Date());
+    renderEntryList();
+  </script>
+</body>
+</html>
