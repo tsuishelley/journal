@@ -399,382 +399,370 @@
     </div>
   </div>
 
-  <script>
-    // --- Firebase init ---
-    // Replace this with your config from the Firebase console
-    var firebaseConfig = {
-apiKey: "AIzaSyBT47xFIZAg9mk9zlSFVwq1orpjqco2Qb8",
-  authDomain: "journal-51cd7.firebaseapp.com",
-  projectId: "journal-51cd7",
-  storageBucket: "journal-51cd7.firebasestorage.app",
-  messagingSenderId: "217845105448",
-  appId: "1:217845105448:web:7b4abfab787bc7adbc461d"
+<script>
+  // --- Firebase init ---
+  var firebaseConfig = {
+    apiKey: "AIzaSyBT47xFIZAg9mk9zlSFVwq1orpjqco2Qb8",
+    authDomain: "journal-51cd7.firebaseapp.com",
+    projectId: "journal-51cd7",
+    storageBucket: "journal-51cd7.firebasestorage.app",
+    messagingSenderId: "217845105448",
+    appId: "1:217845105448:web:7b4abfab787bc7adbc461d"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  var auth = firebase.auth();
+  var db = firebase.firestore();
+
+  // --- Utilities ---
+  function pad(n) {
+    return n < 10 ? "0" + n : "" + n;
+  }
+
+  // Use local time instead of UTC to avoid off-by-one-day issues
+  function formatDate(date) {
+    return (
+      date.getFullYear() + "-" + pad(date.getMonth() + 1) + "-" + pad(date.getDate())
+    ); // YYYY-MM-DD
+  }
+
+  function prettyDate(iso) {
+    const [year, month, day] = iso.split("-").map(Number);
+    const d = new Date(year, month - 1, day);
+    return d.toLocaleDateString(undefined, {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+  }
+
+  // --- State ---
+  let currentDate = new Date();
+  let currentUser = null;
+
+  const dateDisplay = document.getElementById("date-display");
+  const entryListEl = document.getElementById("entry-list");
+  const saveStatus = document.getElementById("save-status");
+  const highlightsInput = document.getElementById("highlights");
+  const highlightsCounter = document.getElementById("highlights-counter");
+  const moodRadios = Array.from(document.querySelectorAll('input[name="mood"]'));
+
+  const appEl = document.getElementById("app");
+  const authForm = document.getElementById("auth-form");
+  const authEmail = document.getElementById("auth-email");
+  const authPassword = document.getElementById("auth-password");
+  const authLogout = document.getElementById("auth-logout");
+  const authStatus = document.getElementById("auth-status");
+  const authUserEmail = document.getElementById("auth-user-email");
+
+  function getEntriesCollection() {
+    if (!currentUser) return null;
+    return db.collection("users").doc(currentUser.uid).collection("entries");
+  }
+
+  function getSelectedMood() {
+    const checked = moodRadios.find((r) => r.checked);
+    return checked ? checked.value : "";
+  }
+
+  function setSelectedMood(value) {
+    moodRadios.forEach((r) => {
+      r.checked = r.value === String(value);
+    });
+  }
+
+  function setCurrentDate(date) {
+    currentDate = date;
+    const iso = formatDate(currentDate);
+    dateDisplay.textContent = prettyDate(iso);
+    loadEntryForCurrentDate();
+  }
+
+  function loadEntryForCurrentDate() {
+    const iso = formatDate(currentDate);
+    const col = getEntriesCollection();
+
+    if (!col) {
+      // Not signed in: clear form
+      setSelectedMood("");
+      highlightsInput.value = "";
+      updateHighlightsCounter();
+      saveStatus.textContent = "Sign in to load and save entries.";
+      return;
+    }
+
+    col.doc(iso).get().then((doc) => {
+      const entry = doc.exists
+        ? doc.data()
+        : { mood: "", highlights: "" };
+
+      setSelectedMood(entry.mood || "");
+      highlightsInput.value = entry.highlights || "";
+      updateHighlightsCounter();
+      saveStatus.textContent = "";
+    }).catch((err) => {
+      console.error("Error loading entry:", err);
+      saveStatus.textContent = "Could not load entry.";
+    });
+  }
+
+  function saveCurrentEntry() {
+    const iso = formatDate(currentDate);
+    const col = getEntriesCollection();
+
+    if (!col) {
+      saveStatus.textContent = "Sign in to save entries.";
+      return;
+    }
+
+    const entry = {
+      mood: getSelectedMood(),
+      highlights: highlightsInput.value.trim(),
+      updatedAt: new Date().toISOString(),
     };
 
-    firebase.initializeApp(firebaseConfig);
-    var auth = firebase.auth();
-    var db = firebase.firestore();
+    col.doc(iso).set(entry, { merge: true }).then(() => {
+      renderEntryList();
+      saveStatus.textContent = "Saved.";
+      setTimeout(() => {
+        if (saveStatus.textContent === "Saved.") saveStatus.textContent = "";
+      }, 2000);
+    }).catch((err) => {
+      console.error("Error saving entry:", err);
+      saveStatus.textContent = "Could not save.";
+    });
+  }
 
-    // --- Utilities ---
-    function pad(n) {
-      return n < 10 ? "0" + n : "" + n;
+  function deleteCurrentEntry() {
+    const iso = formatDate(currentDate);
+    const col = getEntriesCollection();
+
+    if (!col) {
+      saveStatus.textContent = "Sign in to delete entries.";
+      return;
     }
 
-    // Use local time instead of UTC to avoid off-by-one-day issues
-    function formatDate(date) {
-      return (
-        date.getFullYear() + "-" + pad(date.getMonth() + 1) + "-" + pad(date.getDate())
-      ); // YYYY-MM-DD
-    }
-
-    function prettyDate(iso) {
-      const [year, month, day] = iso.split("-").map(Number);
-      const d = new Date(year, month - 1, day);
-      return d.toLocaleDateString(undefined, {
-        weekday: "long",
-        month: "long",
-        day: "numeric",
-        year: "numeric",
-      });
-    }
-
-    // --- State ---
-    let currentDate = new Date();
-    let currentUser = null;
-
-    const dateDisplay = document.getElementById("date-display");
-    const entryListEl = document.getElementById("entry-list");
-    const saveStatus = document.getElementById("save-status");
-    const highlightsInput = document.getElementById("highlights");
-    const highlightsCounter = document.getElementById("highlights-counter");
-    const moodRadios = Array.from(document.querySelectorAll('input[name="mood"]'));
-
-    const appEl = document.getElementById("app");
-    const authForm = document.getElementById("auth-form");
-    const authEmail = document.getElementById("auth-email");
-    const authPassword = document.getElementById("auth-password");
-    const authSubmit = document.getElementById("auth-submit");
-    const authLogout = document.getElementById("auth-logout");
-    const authStatus = document.getElementById("auth-status");
-    const authUserEmail = document.getElementById("auth-user-email");
-
-    function getEntriesCollection() {
-      if (!currentUser) return null;
-      return db.collection("users").doc(currentUser.uid).collection("entries");
-    }
-
-    function getSelectedMood() {
-      const checked = moodRadios.find((r) => r.checked);
-      return checked ? checked.value : "";
-    }
-
-    function setSelectedMood(value) {
-      moodRadios.forEach((r) => {
-        r.checked = r.value === String(value);
-      });
-    }
-
-    function setCurrentDate(date) {
-      currentDate = date;
-      const iso = formatDate(currentDate);
-      dateDisplay.textContent = prettyDate(iso);
-      loadEntryForCurrentDate();
-    }
-
-    function loadEntryForCurrentDate() {
-      const iso = formatDate(currentDate);
-      const col = getEntriesCollection();
-
-      if (!col) {
-        // Not signed in: clear form
-        setSelectedMood("");
-        highlightsInput.value = "";
-        updateHighlightsCounter();
-        saveStatus.textContent = "Sign in to load and save entries.";
-        return;
-      }
-
-      col.doc(iso).get().then((doc) => {
-        const entry = doc.exists
-          ? doc.data()
-          : { mood: "", highlights: "" };
-
-        setSelectedMood(entry.mood || "");
-        highlightsInput.value = entry.highlights || "";
-        updateHighlightsCounter();
-        saveStatus.textContent = "";
-      }).catch((err) => {
-        console.error("Error loading entry:", err);
-        saveStatus.textContent = "Could not load entry.";
-      });
-    }
-
-    function saveCurrentEntry() {
-      const iso = formatDate(currentDate);
-      const col = getEntriesCollection();
-
-      if (!col) {
-        saveStatus.textContent = "Sign in to save entries.";
-        return;
-      }
-
-      const entry = {
-        mood: getSelectedMood(),
-        highlights: highlightsInput.value.trim(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      col.doc(iso).set(entry, { merge: true }).then(() => {
-        renderEntryList();
-        saveStatus.textContent = "Saved.";
+    col.doc(iso).get().then((doc) => {
+      if (!doc.exists) {
+        saveStatus.textContent = "No entry to delete for this date.";
         setTimeout(() => {
-          if (saveStatus.textContent === "Saved.") saveStatus.textContent = "";
-        }, 2000);
-      }).catch((err) => {
-        console.error("Error saving entry:", err);
-        saveStatus.textContent = "Could not save.";
-      });
-    }
-
-    function deleteCurrentEntry() {
-      const iso = formatDate(currentDate);
-      const col = getEntriesCollection();
-
-      if (!col) {
-        saveStatus.textContent = "Sign in to delete entries.";
-        return;
-      }
-
-      col.doc(iso).get().then((doc) => {
-        if (!doc.exists) {
-          saveStatus.textContent = "No entry to delete for this date.";
-          setTimeout(() => {
-            if (saveStatus.textContent === "No entry to delete for this date.") {
-              saveStatus.textContent = "";
-            }
-          }, 2000);
-          return;
-        }
-
-        const confirmed = window.confirm(
-          "Delete this entry for " + prettyDate(iso) + "?"
-        );
-        if (!confirmed) return;
-
-        return col.doc(iso).delete();
-      }).then(() => {
-        if (!col) return; // in case
-
-        setSelectedMood("");
-        highlightsInput.value = "";
-        updateHighlightsCounter();
-        renderEntryList();
-
-        saveStatus.textContent = "Entry deleted.";
-        setTimeout(() => {
-          if (saveStatus.textContent === "Entry deleted.") {
+          if (saveStatus.textContent === "No entry to delete for this date.") {
             saveStatus.textContent = "";
           }
         }, 2000);
-      }).catch((err) => {
-        if (!err) return;
-        console.error("Error deleting entry:", err);
-        saveStatus.textContent = "Could not delete.";
-      });
-    }
-
-    function renderEntryList() {
-      const col = getEntriesCollection();
-      const todayIso = formatDate(new Date());
-
-      entryListEl.innerHTML = "";
-
-      if (!col) {
-        entryListEl.innerHTML =
-          '<li><span class="meta">Sign in to see your entries.</span></li>';
         return;
       }
 
-      col.get().then((snapshot) => {
-        if (snapshot.empty) {
-          entryListEl.innerHTML =
-            '<li><span class="meta">No entries yet.</span></li>';
-          return;
+      const confirmed = window.confirm(
+        "Delete this entry for " + prettyDate(iso) + "?"
+      );
+      if (!confirmed) return;
+
+      return col.doc(iso).delete();
+    }).then(() => {
+      if (!col) return; // in case
+
+      setSelectedMood("");
+      highlightsInput.value = "";
+      updateHighlightsCounter();
+      renderEntryList();
+
+      saveStatus.textContent = "Entry deleted.";
+      setTimeout(() => {
+        if (saveStatus.textContent === "Entry deleted.") {
+          saveStatus.textContent = "";
+        }
+      }, 2000);
+    }).catch((err) => {
+      if (!err) return;
+      console.error("Error deleting entry:", err);
+      saveStatus.textContent = "Could not delete.";
+    });
+  }
+
+  function renderEntryList() {
+    const col = getEntriesCollection();
+    const todayIso = formatDate(new Date());
+
+    entryListEl.innerHTML = "";
+
+    if (!col) {
+      entryListEl.innerHTML =
+        '<li><span class="meta">Sign in to see your entries.</span></li>';
+      return;
+    }
+
+    col.get().then((snapshot) => {
+      if (snapshot.empty) {
+        entryListEl.innerHTML =
+          '<li><span class="meta">No entries yet.</span></li>';
+        return;
+      }
+
+      const dates = [];
+      snapshot.forEach((doc) => dates.push(doc.id));
+      dates.sort().reverse(); // newest first (YYYY-MM-DD works lexicographically)
+
+      dates.forEach((iso) => {
+        const li = document.createElement("li");
+        const btn = document.createElement("button");
+
+        btn.textContent = prettyDate(iso);
+
+        if (iso === todayIso) {
+          btn.classList.add("current-day");
         }
 
-        const dates = [];
-        snapshot.forEach((doc) => dates.push(doc.id));
-        dates.sort().reverse(); // newest first (YYYY-MM-DD works lexicographically)
-
-        dates.forEach((iso) => {
-          const li = document.createElement("li");
-          const btn = document.createElement("button");
-
-          btn.textContent = prettyDate(iso);
-
-          if (iso === todayIso) {
-            btn.classList.add("current-day");
-          }
-
-          btn.addEventListener("click", () => {
-            const [y, m, d] = iso.split("-").map(Number);
-            setCurrentDate(new Date(y, m - 1, d));
-          });
-
-          li.appendChild(btn);
-          entryListEl.appendChild(li);
+        btn.addEventListener("click", () => {
+          const [y, m, d] = iso.split("-").map(Number);
+          setCurrentDate(new Date(y, m - 1, d));
         });
-      }).catch((err) => {
-        console.error("Error loading entries list:", err);
-        entryListEl.innerHTML =
-          '<li><span class="meta">Could not load entries.</span></li>';
+
+        li.appendChild(btn);
+        entryListEl.appendChild(li);
       });
-    }
-
-    function updateHighlightsCounter() {
-      const len = highlightsInput.value.length;
-      highlightsCounter.textContent = `${len} / 400`;
-    }
-
-    // --- Auth logic ---
-    auth.onAuthStateChanged((user) => {
-      currentUser = user;
-
-      if (user) {
-        appEl.style.display = "block";
-        authLogout.style.display = "inline";
-        authSubmit.textContent = "Signed in";
-        authSubmit.disabled = true;
-
-        authUserEmail.textContent = user.email;
-        authStatus.textContent = "Signed in.";
-
-        setCurrentDate(new Date());
-        renderEntryList();
-      } else {
-        currentUser = null;
-        appEl.style.display = "none";
-        authLogout.style.display = "none";
-        authSubmit.textContent = "Sign in / Sign up";
-        authSubmit.disabled = false;
-
-        authUserEmail.textContent = "";
-        authStatus.textContent = "Not signed in.";
-      }
+    }).catch((err) => {
+      console.error("Error loading entries list:", err);
+      entryListEl.innerHTML =
+        '<li><span class="meta">Could not load entries.</span></li>';
     });
-
- function setAuthBusy(isBusy) {
-  const btns = [authSignInBtn, authSignUpBtn];
-  btns.forEach(b => b.disabled = !!isBusy);
-}
-
-const authSignInBtn = document.getElementById("auth-signin");
-const authSignUpBtn = document.getElementById("auth-signup");
-
-authSignInBtn.addEventListener("click", () => {
-  const email = authEmail.value.trim();
-  const password = authPassword.value;
-
-  if (!email || !password) {
-    authStatus.textContent = "Enter email and password.";
-    return;
   }
 
-  setAuthBusy(true);
-  authStatus.textContent = "Signing in...";
+  function updateHighlightsCounter() {
+    const len = highlightsInput.value.length;
+    highlightsCounter.textContent = `${len} / 400`;
+  }
 
-  auth
-    .signInWithEmailAndPassword(email, password)
-    .then(() => {
+  // --- Auth logic ---
+  auth.onAuthStateChanged((user) => {
+    currentUser = user;
+
+    if (user) {
+      appEl.style.display = "block";
+      authLogout.style.display = "inline";
+
+      authUserEmail.textContent = user.email;
       authStatus.textContent = "Signed in.";
-    })
-    .catch((err) => {
-      console.error("Sign-in error:", err);
 
-      if (err.code === "auth/too-many-requests") {
-        authStatus.textContent =
-          "Too many attempts from this device. Try again later or use another browser/device.";
-      } else if (
-        err.code === "auth/user-not-found" ||
-        err.code === "auth/invalid-credential" ||
-        err.code === "auth/invalid-login-credentials"
-      ) {
-        authStatus.textContent = "No account found for that email. Use 'Sign up' first.";
-      } else if (err.code === "auth/wrong-password") {
-        authStatus.textContent = "Incorrect password.";
-      } else {
-        authStatus.textContent = err.message || "Authentication error.";
-      }
-    })
-    .finally(() => setAuthBusy(false));
-});
+      setCurrentDate(new Date());
+      renderEntryList();
+    } else {
+      currentUser = null;
+      appEl.style.display = "none";
+      authLogout.style.display = "none";
 
-authSignUpBtn.addEventListener("click", () => {
-  const email = authEmail.value.trim();
-  const password = authPassword.value;
+      authUserEmail.textContent = "";
+      authStatus.textContent = "Not signed in.";
+    }
+  });
 
-  if (!email || !password) {
-    authStatus.textContent = "Enter email and password to create an account.";
-    return;
+  function setAuthBusy(isBusy) {
+    const btns = [authSignInBtn, authSignUpBtn];
+    btns.forEach(b => b.disabled = !!isBusy);
   }
 
-  setAuthBusy(true);
-  authStatus.textContent = "Creating account...";
+  const authSignInBtn = document.getElementById("auth-signin");
+  const authSignUpBtn = document.getElementById("auth-signup");
 
-  auth
-    .createUserWithEmailAndPassword(email, password)
-    .then(() => {
-      authStatus.textContent = "Account created and signed in.";
-    })
-    .catch((err) => {
-      console.error("Sign-up error:", err);
+  authSignInBtn.addEventListener("click", () => {
+    const email = authEmail.value.trim();
+    const password = authPassword.value;
 
-      if (err.code === "auth/email-already-in-use") {
-        authStatus.textContent = "That email already has an account. Use 'Sign in' instead.";
-      } else if (err.code === "auth/weak-password") {
-        authStatus.textContent = "Password is too weak. Try something longer/stronger.";
-      } else {
-        authStatus.textContent = err.message || "Could not create account.";
-      }
-    })
-    .finally(() => setAuthBusy(false));
-});
+    if (!email || !password) {
+      authStatus.textContent = "Enter email and password.";
+      return;
+    }
 
-authLogout.addEventListener("click", () => {
-  auth.signOut().catch((err) => {
-    console.error("Logout error:", err);
+    setAuthBusy(true);
+    authStatus.textContent = "Signing in...";
+
+    auth
+      .signInWithEmailAndPassword(email, password)
+      .then(() => {
+        authStatus.textContent = "Signed in.";
+      })
+      .catch((err) => {
+        console.error("Sign-in error:", err);
+
+        if (err.code === "auth/too-many-requests") {
+          authStatus.textContent =
+            "Too many attempts from this device. Try again later or use another browser/device.";
+        } else if (
+          err.code === "auth/user-not-found" ||
+          err.code === "auth/invalid-credential" ||
+          err.code === "auth/invalid-login-credentials"
+        ) {
+          authStatus.textContent = "No account found for that email. Use 'Sign up' first.";
+        } else if (err.code === "auth/wrong-password") {
+          authStatus.textContent = "Incorrect password.";
+        } else {
+          authStatus.textContent = err.message || "Authentication error.";
+        }
+      })
+      .finally(() => setAuthBusy(false));
   });
-});
 
+  authSignUpBtn.addEventListener("click", () => {
+    const email = authEmail.value.trim();
+    const password = authPassword.value;
 
-    // --- Journal event listeners ---
-    document.getElementById("prev-day").addEventListener("click", () => {
-      const d = new Date(currentDate);
-      d.setDate(d.getDate() - 1);
-      setCurrentDate(d);
+    if (!email || !password) {
+      authStatus.textContent = "Enter email and password to create an account.";
+      return;
+    }
+
+    setAuthBusy(true);
+    authStatus.textContent = "Creating account...";
+
+    auth
+      .createUserWithEmailAndPassword(email, password)
+      .then(() => {
+        authStatus.textContent = "Account created and signed in.";
+      })
+      .catch((err) => {
+        console.error("Sign-up error:", err);
+
+        if (err.code === "auth/email-already-in-use") {
+          authStatus.textContent = "That email already has an account. Use 'Sign in' instead.";
+        } else if (err.code === "auth/weak-password") {
+          authStatus.textContent = "Password is too weak. Try something longer/stronger.";
+        } else {
+          authStatus.textContent = err.message || "Could not create account.";
+        }
+      })
+      .finally(() => setAuthBusy(false));
+  });
+
+  authLogout.addEventListener("click", () => {
+    auth.signOut().catch((err) => {
+      console.error("Logout error:", err);
     });
+  });
 
-    document.getElementById("next-day").addEventListener("click", () => {
-      const d = new Date(currentDate);
-      d.setDate(d.getDate() + 1);
-      setCurrentDate(d);
-    });
+  // --- Journal event listeners ---
+  document.getElementById("prev-day").addEventListener("click", () => {
+    const d = new Date(currentDate);
+    d.setDate(d.getDate() - 1);
+    setCurrentDate(d);
+  });
 
-    document.getElementById("today-btn").addEventListener("click", () => {
-      setCurrentDate(new Date());
-    });
+  document.getElementById("next-day").addEventListener("click", () => {
+    const d = new Date(currentDate);
+    d.setDate(d.getDate() + 1);
+    setCurrentDate(d);
+  });
 
-    document.getElementById("save-btn").addEventListener("click", saveCurrentEntry);
-    document.getElementById("delete-btn").addEventListener("click", deleteCurrentEntry);
+  document.getElementById("today-btn").addEventListener("click", () => {
+    setCurrentDate(new Date());
+  });
 
-    moodRadios.forEach((r) => {
-      r.addEventListener("change", saveCurrentEntry);
-    });
+  document.getElementById("save-btn").addEventListener("click", saveCurrentEntry);
+  document.getElementById("delete-btn").addEventListener("click", deleteCurrentEntry);
 
-    highlightsInput.addEventListener("input", () => {
-      updateHighlightsCounter();
-      saveCurrentEntry();
-    });
-  </script>
+  // No autosave: just update counter visually
+  highlightsInput.addEventListener("input", updateHighlightsCounter);
+</script>
+
 </body>
 </html>
