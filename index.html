@@ -2,16 +2,21 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Shelley's Journal</title>
+  <title>Daily Journal</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <!-- Fauna One -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fauna+One&display=swap">
 
+  <!-- Firebase v8 SDK (Auth + Firestore) -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
   <style>
     :root {
-      --text-size: 15px;
-      --text-color: #333;
+      --text-size: 14px;
+      --text-color: #444;
       --muted: #b7b7b7;
       --border-soft: #ececec;
     }
@@ -28,7 +33,81 @@
       background: #fff;
       color: var(--text-color);
       display: flex;
+      flex-direction: column;
       min-height: 100vh;
+    }
+
+    /* --- Auth bar --- */
+    .auth-bar {
+      border-bottom: 1px solid var(--border-soft);
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: #fcfcfc;
+    }
+
+    .auth-bar-left {
+      font-size: var(--text-size);
+      color: var(--text-color);
+    }
+
+    .auth-form {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .auth-form input[type="email"],
+    .auth-form input[type="password"] {
+      font-family: inherit;
+      font-size: var(--text-size);
+      padding: 4px 6px;
+      border-radius: 2px;
+      border: 1px solid var(--border-soft);
+      background: #fff;
+      min-width: 160px;
+    }
+
+    .auth-form button {
+      font-family: inherit;
+      font-size: var(--text-size);
+      cursor: pointer;
+      border: none;
+      background: none;
+      padding: 0;
+      text-decoration: underline;
+      color: var(--text-color);
+    }
+
+    .auth-meta {
+      font-size: var(--text-size);
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .auth-logged-in-email {
+      font-size: var(--text-size);
+    }
+
+    .auth-logout-btn {
+      margin-left: 10px;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    /* --- App layout --- */
+    #app {
+      flex: 1;
+      display: none; /* shown after auth */
+      min-height: 0;
+    }
+
+    .app-inner {
+      display: flex;
+      min-height: calc(100vh - 56px);
     }
 
     .sidebar {
@@ -170,14 +249,13 @@
       align-items: center;
       gap: 4px;
       font-size: 12px;
+      margin: 0;
     }
 
     .mood-group input[type="radio"] {
-        margin-bottom:10px;
       cursor: pointer;
       transform: scale(1.4);   /* bigger radios */
       accent-color: #444;      /* filled color when selected */
-      
     }
 
     textarea {
@@ -221,7 +299,7 @@
     }
 
     @media (max-width: 900px) {
-      body {
+      .app-inner {
         flex-direction: column;
       }
       .sidebar {
@@ -238,67 +316,103 @@
   </style>
 </head>
 <body>
-  <aside class="sidebar">
-    <ul class="entry-list" id="entry-list"></ul>
-  </aside>
-
-  <main class="main">
-    <header class="date-nav">
-      <div class="date-nav-left">
-        <button type="button" id="prev-day">Yesterday</button>
-      </div>
-      <div style="text-align: center; flex: 1;">
-        <div class="date-display" id="date-display"></div>
-        <button type="button" class="skip-today" id="today-btn">Skip to today.</button>
-      </div>
-      <div class="date-nav-right">
-        <button type="button" id="next-day">Tomorrow</button>
-      </div>
-    </header>
-
-    <div class="form-wrapper">
-      <section class="journal-inner">
-        <form id="journal-form">
-          <!-- Mood as 1–10 radio buttons -->
-          <div class="field">
-            <label>Today I'm feeling...</label>
-            <div class="mood-group" id="mood-group">
-              <label><input type="radio" name="mood" value="1">1</label>
-              <label><input type="radio" name="mood" value="2">2</label>
-              <label><input type="radio" name="mood" value="3">3</label>
-              <label><input type="radio" name="mood" value="4">4</label>
-              <label><input type="radio" name="mood" value="5">5</label>
-              <label><input type="radio" name="mood" value="6">6</label>
-              <label><input type="radio" name="mood" value="7">7</label>
-              <label><input type="radio" name="mood" value="8">8</label>
-              <label><input type="radio" name="mood" value="9">9</label>
-              <label><input type="radio" name="mood" value="10">10</label>
-            </div>
-          </div>
-
-          <!-- What happened with 400 char limit -->
-          <div class="field">
-            <label for="highlights">Some things that happened today were...</label>
-            <textarea
-              id="highlights"
-              name="highlights"
-              maxlength="400"
-              placeholder="Start typing here."
-            ></textarea>
-            <div class="char-counter" id="highlights-counter">0 / 400</div>
-          </div>
-
-          <div class="form-actions">
-            <button type="button" class="primary" id="save-btn">That's all for today.</button>
-            <button type="button" class="danger" id="delete-btn">Delete today.</button>
-            <span class="meta" id="save-status"></span>
-          </div>
-        </form>
-      </section>
+  <!-- Auth header -->
+  <header class="auth-bar">
+    <div class="auth-bar-left">
+      <span class="auth-logged-in-email" id="auth-user-email"></span>
     </div>
-  </main>
+    <div>
+      <form id="auth-form" class="auth-form">
+        <input type="email" id="auth-email" placeholder="Email" autocomplete="email" />
+        <input type="password" id="auth-password" placeholder="Password" autocomplete="current-password" />
+        <button type="submit" id="auth-submit">Sign in / Sign up</button>
+        <button type="button" id="auth-logout" class="auth-logout-btn" style="display:none;">Log out</button>
+      </form>
+      <div class="auth-meta" id="auth-status">Not signed in.</div>
+    </div>
+  </header>
+
+  <!-- Main app (hidden until logged in) -->
+  <div id="app">
+    <div class="app-inner">
+      <aside class="sidebar">
+        <ul class="entry-list" id="entry-list"></ul>
+      </aside>
+
+      <main class="main">
+        <header class="date-nav">
+          <div class="date-nav-left">
+            <button type="button" id="prev-day">Yesterday</button>
+          </div>
+          <div style="text-align: center; flex: 1;">
+            <div class="date-display" id="date-display"></div>
+            <button type="button" class="skip-today" id="today-btn">Skip to today.</button>
+          </div>
+          <div class="date-nav-right">
+            <button type="button" id="next-day">Tomorrow</button>
+          </div>
+        </header>
+
+        <div class="form-wrapper">
+          <section class="journal-inner">
+            <form id="journal-form">
+              <!-- Mood as 1–10 radio buttons -->
+              <div class="field">
+                <label>Today I'm feeling...</label>
+                <div class="mood-group" id="mood-group">
+                  <label><input type="radio" name="mood" value="1">1</label>
+                  <label><input type="radio" name="mood" value="2">2</label>
+                  <label><input type="radio" name="mood" value="3">3</label>
+                  <label><input type="radio" name="mood" value="4">4</label>
+                  <label><input type="radio" name="mood" value="5">5</label>
+                  <label><input type="radio" name="mood" value="6">6</label>
+                  <label><input type="radio" name="mood" value="7">7</label>
+                  <label><input type="radio" name="mood" value="8">8</label>
+                  <label><input type="radio" name="mood" value="9">9</label>
+                  <label><input type="radio" name="mood" value="10">10</label>
+                </div>
+              </div>
+
+              <!-- What happened with 400 char limit -->
+              <div class="field">
+                <label for="highlights">Some things that happened today were...</label>
+                <textarea
+                  id="highlights"
+                  name="highlights"
+                  maxlength="400"
+                  placeholder="Start typing here."
+                ></textarea>
+                <div class="char-counter" id="highlights-counter">0 / 400</div>
+              </div>
+
+              <div class="form-actions">
+                <button type="button" class="primary" id="save-btn">That's all for today.</button>
+                <button type="button" class="danger" id="delete-btn">Delete today.</button>
+                <span class="meta" id="save-status"></span>
+              </div>
+            </form>
+          </section>
+        </div>
+      </main>
+    </div>
+  </div>
 
   <script>
+    // --- Firebase init ---
+    // Replace this with your config from the Firebase console
+    var firebaseConfig = {
+apiKey: "AIzaSyBT47xFIZAg9mk9zlSFVwq1orpjqco2Qb8",
+  authDomain: "journal-51cd7.firebaseapp.com",
+  projectId: "journal-51cd7",
+  storageBucket: "journal-51cd7.firebasestorage.app",
+  messagingSenderId: "217845105448",
+  appId: "1:217845105448:web:7b4abfab787bc7adbc461d"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    var auth = firebase.auth();
+    var db = firebase.firestore();
+
     // --- Utilities ---
     function pad(n) {
       return n < 10 ? "0" + n : "" + n;
@@ -322,20 +436,9 @@
       });
     }
 
-    function loadAllEntries() {
-      try {
-        return JSON.parse(localStorage.getItem("journalEntries")) || {};
-      } catch (e) {
-        return {};
-      }
-    }
-
-    function saveAllEntries(entries) {
-      localStorage.setItem("journalEntries", JSON.stringify(entries));
-    }
-
     // --- State ---
     let currentDate = new Date();
+    let currentUser = null;
 
     const dateDisplay = document.getElementById("date-display");
     const entryListEl = document.getElementById("entry-list");
@@ -343,6 +446,20 @@
     const highlightsInput = document.getElementById("highlights");
     const highlightsCounter = document.getElementById("highlights-counter");
     const moodRadios = Array.from(document.querySelectorAll('input[name="mood"]'));
+
+    const appEl = document.getElementById("app");
+    const authForm = document.getElementById("auth-form");
+    const authEmail = document.getElementById("auth-email");
+    const authPassword = document.getElementById("auth-password");
+    const authSubmit = document.getElementById("auth-submit");
+    const authLogout = document.getElementById("auth-logout");
+    const authStatus = document.getElementById("auth-status");
+    const authUserEmail = document.getElementById("auth-user-email");
+
+    function getEntriesCollection() {
+      if (!currentUser) return null;
+      return db.collection("users").doc(currentUser.uid).collection("entries");
+    }
 
     function getSelectedMood() {
       const checked = moodRadios.find((r) => r.checked);
@@ -364,100 +481,151 @@
 
     function loadEntryForCurrentDate() {
       const iso = formatDate(currentDate);
-      const entries = loadAllEntries();
-      const entry = entries[iso] || {
-        mood: "",
-        highlights: ""
-      };
+      const col = getEntriesCollection();
 
-      setSelectedMood(entry.mood || "");
-      highlightsInput.value = entry.highlights || "";
-      updateHighlightsCounter();
-      saveStatus.textContent = "";
+      if (!col) {
+        // Not signed in: clear form
+        setSelectedMood("");
+        highlightsInput.value = "";
+        updateHighlightsCounter();
+        saveStatus.textContent = "Sign in to load and save entries.";
+        return;
+      }
+
+      col.doc(iso).get().then((doc) => {
+        const entry = doc.exists
+          ? doc.data()
+          : { mood: "", highlights: "" };
+
+        setSelectedMood(entry.mood || "");
+        highlightsInput.value = entry.highlights || "";
+        updateHighlightsCounter();
+        saveStatus.textContent = "";
+      }).catch((err) => {
+        console.error("Error loading entry:", err);
+        saveStatus.textContent = "Could not load entry.";
+      });
     }
 
     function saveCurrentEntry() {
       const iso = formatDate(currentDate);
-      const entries = loadAllEntries();
+      const col = getEntriesCollection();
 
-      entries[iso] = {
+      if (!col) {
+        saveStatus.textContent = "Sign in to save entries.";
+        return;
+      }
+
+      const entry = {
         mood: getSelectedMood(),
         highlights: highlightsInput.value.trim(),
         updatedAt: new Date().toISOString(),
       };
 
-      saveAllEntries(entries);
-      renderEntryList();
-      saveStatus.textContent = "Saved.";
-      setTimeout(() => {
-        if (saveStatus.textContent === "Saved.") saveStatus.textContent = "";
-      }, 2000);
+      col.doc(iso).set(entry, { merge: true }).then(() => {
+        renderEntryList();
+        saveStatus.textContent = "Saved.";
+        setTimeout(() => {
+          if (saveStatus.textContent === "Saved.") saveStatus.textContent = "";
+        }, 2000);
+      }).catch((err) => {
+        console.error("Error saving entry:", err);
+        saveStatus.textContent = "Could not save.";
+      });
     }
 
     function deleteCurrentEntry() {
       const iso = formatDate(currentDate);
-      const entries = loadAllEntries();
+      const col = getEntriesCollection();
 
-      if (!entries[iso]) {
-        saveStatus.textContent = "No entry to delete for this date.";
+      if (!col) {
+        saveStatus.textContent = "Sign in to delete entries.";
+        return;
+      }
+
+      col.doc(iso).get().then((doc) => {
+        if (!doc.exists) {
+          saveStatus.textContent = "No entry to delete for this date.";
+          setTimeout(() => {
+            if (saveStatus.textContent === "No entry to delete for this date.") {
+              saveStatus.textContent = "";
+            }
+          }, 2000);
+          return;
+        }
+
+        const confirmed = window.confirm(
+          "Delete this entry for " + prettyDate(iso) + "?"
+        );
+        if (!confirmed) return;
+
+        return col.doc(iso).delete();
+      }).then(() => {
+        if (!col) return; // in case
+
+        setSelectedMood("");
+        highlightsInput.value = "";
+        updateHighlightsCounter();
+        renderEntryList();
+
+        saveStatus.textContent = "Entry deleted.";
         setTimeout(() => {
-          if (saveStatus.textContent === "No entry to delete for this date.") {
+          if (saveStatus.textContent === "Entry deleted.") {
             saveStatus.textContent = "";
           }
         }, 2000);
-        return;
-      }
-
-      const confirmed = window.confirm(
-        "Delete this entry for " + prettyDate(iso) + "?"
-      );
-      if (!confirmed) return;
-
-      delete entries[iso];
-      saveAllEntries(entries);
-
-      setSelectedMood("");
-      highlightsInput.value = "";
-      updateHighlightsCounter();
-      renderEntryList();
-
-      saveStatus.textContent = "Entry deleted.";
-      setTimeout(() => {
-        if (saveStatus.textContent === "Entry deleted.") saveStatus.textContent = "";
-      }, 2000);
+      }).catch((err) => {
+        if (!err) return;
+        console.error("Error deleting entry:", err);
+        saveStatus.textContent = "Could not delete.";
+      });
     }
 
     function renderEntryList() {
-      const entries = loadAllEntries();
-      const dates = Object.keys(entries).sort().reverse(); // newest first
+      const col = getEntriesCollection();
       const todayIso = formatDate(new Date());
 
       entryListEl.innerHTML = "";
-      if (dates.length === 0) {
+
+      if (!col) {
         entryListEl.innerHTML =
-          '<li><span class="meta">No entries yet.</span></li>';
+          '<li><span class="meta">Sign in to see your entries.</span></li>';
         return;
       }
 
-      dates.forEach((iso) => {
-        const li = document.createElement("li");
-        const btn = document.createElement("button");
-
-        // Sidebar: date only
-        btn.textContent = prettyDate(iso);
-
-        // underline current day
-        if (iso === todayIso) {
-          btn.classList.add("current-day");
+      col.get().then((snapshot) => {
+        if (snapshot.empty) {
+          entryListEl.innerHTML =
+            '<li><span class="meta">No entries yet.</span></li>';
+          return;
         }
 
-        btn.addEventListener("click", () => {
-          const [y, m, d] = iso.split("-").map(Number);
-          setCurrentDate(new Date(y, m - 1, d));
-        });
+        const dates = [];
+        snapshot.forEach((doc) => dates.push(doc.id));
+        dates.sort().reverse(); // newest first (YYYY-MM-DD works lexicographically)
 
-        li.appendChild(btn);
-        entryListEl.appendChild(li);
+        dates.forEach((iso) => {
+          const li = document.createElement("li");
+          const btn = document.createElement("button");
+
+          btn.textContent = prettyDate(iso);
+
+          if (iso === todayIso) {
+            btn.classList.add("current-day");
+          }
+
+          btn.addEventListener("click", () => {
+            const [y, m, d] = iso.split("-").map(Number);
+            setCurrentDate(new Date(y, m - 1, d));
+          });
+
+          li.appendChild(btn);
+          entryListEl.appendChild(li);
+        });
+      }).catch((err) => {
+        console.error("Error loading entries list:", err);
+        entryListEl.innerHTML =
+          '<li><span class="meta">Could not load entries.</span></li>';
       });
     }
 
@@ -466,7 +634,75 @@
       highlightsCounter.textContent = `${len} / 400`;
     }
 
-    // --- Event listeners ---
+    // --- Auth logic ---
+    auth.onAuthStateChanged((user) => {
+      currentUser = user;
+
+      if (user) {
+        appEl.style.display = "block";
+        authLogout.style.display = "inline";
+        authSubmit.textContent = "Signed in";
+        authSubmit.disabled = true;
+
+        authUserEmail.textContent = user.email;
+        authStatus.textContent = "Signed in.";
+
+        setCurrentDate(new Date());
+        renderEntryList();
+      } else {
+        currentUser = null;
+        appEl.style.display = "none";
+        authLogout.style.display = "none";
+        authSubmit.textContent = "Sign in / Sign up";
+        authSubmit.disabled = false;
+
+        authUserEmail.textContent = "";
+        authStatus.textContent = "Not signed in.";
+      }
+    });
+
+    authForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const email = authEmail.value.trim();
+      const password = authPassword.value;
+
+      if (!email || !password) {
+        authStatus.textContent = "Enter email and password.";
+        return;
+      }
+
+      authStatus.textContent = "Signing in...";
+
+      auth.signInWithEmailAndPassword(email, password)
+        .then(() => {
+          authStatus.textContent = "Signed in.";
+        })
+        .catch((err) => {
+          if (err.code === "auth/user-not-found") {
+            // Auto sign up if user doesn’t exist
+            authStatus.textContent = "No account found. Creating one...";
+            return auth.createUserWithEmailAndPassword(email, password);
+          } else {
+            throw err;
+          }
+        })
+        .then((res) => {
+          if (!res) return;
+          authStatus.textContent = "Account created and signed in.";
+        })
+        .catch((err) => {
+          console.error("Auth error:", err);
+          authStatus.textContent = err.message || "Authentication error.";
+        });
+    });
+
+    authLogout.addEventListener("click", () => {
+      auth.signOut().catch((err) => {
+        console.error("Logout error:", err);
+      });
+    });
+
+    // --- Journal event listeners ---
     document.getElementById("prev-day").addEventListener("click", () => {
       const d = new Date(currentDate);
       d.setDate(d.getDate() - 1);
@@ -494,10 +730,6 @@
       updateHighlightsCounter();
       saveCurrentEntry();
     });
-
-    // --- Init ---
-    setCurrentDate(new Date());
-    renderEntryList();
   </script>
 </body>
 </html>
