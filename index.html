@@ -5,9 +5,8 @@
   <title>Journal</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- Fauna One -->
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fauna+One&display=swap">
-
+  <!-- Source Serif Pro -->
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,200..900;1,8..60,200..900&display=swap" rel="stylesheet">
   <!-- Firebase v8 SDK (Auth + Firestore) -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -15,7 +14,7 @@
 
   <style>
     :root {
-      --text-size: 14px;
+      --text-size: 15px;
       --text-color: #444;
       --muted: #b7b7b7;
       --border-soft: #ececec;
@@ -26,87 +25,14 @@
     }
 
     body {
-      font-family: "Fauna One", serif;
+  font-family: "Source Serif 4", serif;
+    font-weight:500;
       font-size: var(--text-size);
       margin: 0;
       padding: 0;
       background: #fff;
       color: var(--text-color);
       min-height: 100vh;
-    }
-
-    /* --- Auth screen (when logged out) --- */
-    .auth-screen {
-      position: fixed;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #f5f5f7;
-      padding: 16px;
-      z-index: 10;
-    }
-
-    .auth-card {
-      background: #ffffff;
-      border: 1px solid var(--border-soft);
-      padding: 24px 28px 20px;
-      max-width: 360px;
-      width: 100%;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
-    }
-
-    .auth-title {
-      font-size: 18px;
-      margin: 0 0 4px;
-    }
-
-    .auth-subtitle {
-      margin: 0 0 16px;
-      font-size: var(--text-size);
-      color: #777;
-    }
-
-    .auth-form {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-bottom: 8px;
-    }
-
-    .auth-form input[type="email"],
-    .auth-form input[type="password"] {
-      font-family: inherit;
-      font-size: var(--text-size);
-      padding: 6px 8px;
-      border-radius: 2px;
-      border: 1px solid var(--border-soft);
-      background: #fff;
-      width: 100%;
-    }
-
-    .auth-actions {
-      display: flex;
-      justify-content: flex-start;
-      gap: 12px;
-      margin-top: 8px;
-    }
-
-    .auth-actions button {
-      font-family: inherit;
-      font-size: var(--text-size);
-      cursor: pointer;
-      border: none;
-      background: none;
-      padding: 0;
-      text-decoration: underline;
-      color: var(--text-color);
-    }
-
-    .auth-meta {
-      font-size: var(--text-size);
-      color: var(--muted);
-      margin-top: 6px;
     }
 
     /* --- App layout (when logged in) --- */
@@ -348,27 +274,106 @@
         padding: 12px 20px 0;
       }
     }
+
+    /* --- Auth Screen --- */
+
+.auth-screen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: space-between;
+  flex-direction: column;
+  padding-top: 120px;
+  background: #ffffff;
+  z-index: 10;
+}
+
+.auth-inner {
+  text-align: center;
+  width: 100%;
+}
+
+.auth-heading {
+  font-size: 150px;
+  font-weight: 500;
+  margin: 0 0 40px;
+  color: #333;
+}
+
+/* Inputs */
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.auth-form input {
+  font-family: inherit;
+  font-size: 16px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid #ddd;
+  padding: 12px 4px;
+  outline: none;
+  width: 100%;
+}
+
+.auth-form input::placeholder {
+  color: #888;
+}
+
+/* Actions */
+
+.auth-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+.auth-actions button {
+  font-family: inherit;
+  font-size: 14px;
+  padding: 8px 22px;
+  border: 1px solid #ddd;
+  cursor: pointer;
+  color: #333;
+}
+
+.auth-actions button:hover {
+  background: #f2f2f2;
+}
+
+/* Meta text */
+
+.auth-meta {
+  margin-top: 20px;
+  color: #999;
+  font-size: 14px;
+}
+
   </style>
 </head>
 <body>
-  <!-- Auth screen (shown when logged out) -->
-  <div id="auth-screen" class="auth-screen">
-    <div class="auth-card">
-      <h1 class="auth-title">Daily Journal</h1>
-      <p class="auth-subtitle">Sign in to keep your entries synced across devices.</p>
+<!-- Auth screen -->
+<div id="auth-screen" class="auth-screen">
+  <div class="auth-inner">
+    <h1 class="auth-heading">I’m too tired to journal.</h1>
 
-      <form id="auth-form" class="auth-form" onsubmit="return false;">
-        <input type="email" id="auth-email" placeholder="Email" autocomplete="email" />
-        <input type="password" id="auth-password" placeholder="Password" autocomplete="current-password" />
-        <div class="auth-actions">
-          <button type="button" id="auth-signin">Sign in</button>
-          <button type="button" id="auth-signup">Sign up</button>
-        </div>
-      </form>
+    <form id="auth-form" class="auth-form" onsubmit="return false;">
+      <input type="email" id="auth-email" placeholder="Enter your email" autocomplete="email" />
+      <input type="password" id="auth-password" placeholder="Enter your password" autocomplete="current-password" />
 
-      <div class="auth-meta" id="auth-status">Not signed in.</div>
-    </div>
+      <div class="auth-actions">
+        <button type="button" id="auth-signin">Sign in</button>
+        <button type="button" id="auth-signup">Sign up</button>
+      </div>
+    </form>
   </div>
+</div>
+
 
   <!-- Main app (shown when logged in) -->
   <div id="app">
