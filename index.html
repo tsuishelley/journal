@@ -26,6 +26,22 @@
       box-sizing: border-box;
     }
 
+    /* Remove blue background + force your font on autofill */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-text-fill-color: #333 !important;
+  font-family: "Source Serif 4", serif !important;
+
+  /* kill the ugly blue background */
+  box-shadow: 0 0 0px 1000px #ffffff inset !important;
+
+  /* make border look consistent */
+  border-bottom: 1px solid #ddd !important;
+}
+
+
     body {
       font-family: "Source Serif 4", serif;
       font-weight: 400;
@@ -87,7 +103,7 @@
     }
 
     .entry-list button.current-day {
-      text-decoration: underline;
+
     }
 
     .sidebar-footer {
