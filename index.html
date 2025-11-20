@@ -6,8 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" type="image/png" sizes="28x28" href="favicon.svg">
 
-  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,200..900;1,8..60,200..900&display=swap" rel="stylesheet">
-
+  <!-- Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
   <!-- Firebase v8 SDK (Auth + Firestore) -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -17,7 +17,7 @@
 
   <style>
     :root {
-      --text-size: 16px;
+      --text-size: 15px;
       --text-color: #444;
       --muted: #b7b7b7;
       --border-soft: #ececec;
@@ -33,13 +33,13 @@
     input:-webkit-autofill:focus,
     input:-webkit-autofill:active {
       -webkit-text-fill-color: #333 !important;
-      font-family: "Helvetica Neue", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
       box-shadow: 0 0 0px 1000px #ffffff inset !important;
       border-bottom: 1px solid #ddd !important;
     }
 
     body {
-      font-family: "Helvetica Neue", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       font-weight: 400; /* regular */
       font-size: var(--text-size);
       margin: 0;
@@ -337,15 +337,7 @@
       width: 100%;
     }
 
-    .auth-heading {
-      font-family: "Source Serif 4", serif;
-      font-size: 150px;
-      line-height: 0.9;
-      font-weight: 500;
-      margin: 30px 0;
-      padding-bottom: 40px;
-justify-self: center;
-    }
+    .auth-heading { font-family: "Source Serif 4", serif; font-size: 150px; line-height: 0.9; font-weight: 500; margin: 30px 0; padding-bottom: 40px; justify-self: center; }
 
     .auth-form {
       display: flex;
@@ -366,6 +358,7 @@ justify-self: center;
       padding: 10px 5px;
       outline: none;
       width: 100%;
+      color: #333;
     }
 
     .auth-form input::placeholder {
