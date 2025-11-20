@@ -6,17 +6,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" type="image/png" sizes="28x28" href="favicon.svg">
 
-  <!-- Source Serif 4 -->
   <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,200..900;1,8..60,200..900&display=swap" rel="stylesheet">
+
 
   <!-- Firebase v8 SDK (Auth + Firestore) -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  
 
   <style>
     :root {
-      --text-size: 14px;
+      --text-size: 16px;
       --text-color: #444;
       --muted: #b7b7b7;
       --border-soft: #ececec;
@@ -26,25 +27,20 @@
       box-sizing: border-box;
     }
 
-    /* Remove blue background + force your font on autofill */
-input:-webkit-autofill,
-input:-webkit-autofill:hover,
-input:-webkit-autofill:focus,
-input:-webkit-autofill:active {
-  -webkit-text-fill-color: #333 !important;
-  font-family: "Source Serif 4", serif !important;
-
-  /* kill the ugly blue background */
-  box-shadow: 0 0 0px 1000px #ffffff inset !important;
-
-  /* make border look consistent */
-  border-bottom: 1px solid #ddd !important;
-}
-
+    /* Remove blue background + force font on autofill */
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus,
+    input:-webkit-autofill:active {
+      -webkit-text-fill-color: #333 !important;
+      font-family: "Helvetica Neue", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+      box-shadow: 0 0 0px 1000px #ffffff inset !important;
+      border-bottom: 1px solid #ddd !important;
+    }
 
     body {
-      font-family: "Source Serif 4", serif;
-      font-weight: 400;
+      font-family: "Helvetica Neue", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-weight: 400; /* regular */
       font-size: var(--text-size);
       margin: 0;
       padding: 0;
@@ -67,6 +63,7 @@ input:-webkit-autofill:active {
     .sidebar {
       width: 320px;
       max-width: 40%;
+      font-size: var(--text-size);
       border-right: 1px solid var(--border-soft);
       background: #fafafa;
       padding: 24px 24px 16px;
@@ -93,7 +90,6 @@ input:-webkit-autofill:active {
       border: none;
       background: none;
       font: inherit;
-      font-size: var(--text-size);
       color: var(--text-color);
       cursor: pointer;
     }
@@ -102,17 +98,12 @@ input:-webkit-autofill:active {
       text-decoration: underline;
     }
 
-    .entry-list button.current-day {
-
-    }
-
     .sidebar-footer {
       display: flex;
       align-items: center;
       justify-content: space-between;
       padding-top: 16px;
       border-top: 1px solid var(--border-soft);
-      font-size: var(--text-size);
     }
 
     .sidebar-email {
@@ -148,6 +139,7 @@ input:-webkit-autofill:active {
       align-items: center;
       justify-content: space-between;
       gap: 12px;
+      font-size: var(--text-size);
       padding-bottom: 28px;
       border-bottom: 1px solid var(--border-soft);
     }
@@ -168,8 +160,8 @@ input:-webkit-autofill:active {
       display: inline-block;
       padding: 6px 18px;
       border: 1px solid var(--border-soft);
-      background: #fff;
       font-size: var(--text-size);
+      background: #fff;
       cursor: pointer;
     }
 
@@ -199,6 +191,7 @@ input:-webkit-autofill:active {
       background: none;
       padding: 0;
       color: var(--text-color);
+      font-weight: 400; /* regular */
     }
 
     button.danger {
@@ -206,15 +199,15 @@ input:-webkit-autofill:active {
     }
 
     button.primary:hover {
-        text-decoration: underline;
+      text-decoration: underline;
     }
 
     .delete {
-        opacity:50%;
+      opacity: 50%;
     }
 
     .delete:hover {
-        text-decoration: underline;
+      text-decoration: underline;
     }
 
     label {
@@ -252,7 +245,6 @@ input:-webkit-autofill:active {
       align-items: center;
       flex-wrap: wrap;
       margin-top: 20px;
-      
     }
 
     .mood-group label {
@@ -261,26 +253,25 @@ input:-webkit-autofill:active {
       align-items: center;
       gap: 10px;
       font-size: var(--text-size);
-
     }
 
     .mood-group input[type="radio"] {
       cursor: pointer;
       transform: scale(1.4);
       accent-color: #444;
-      
     }
 
     textarea {
       width: 100%;
       font-family: inherit;
-      font-size: 18px;
+      font-size: var(--text-size);
+      font-weight: 400;
       line-height: 175%;
       border: none;
       border-radius: 0;
       padding: 0;
       margin-top: 4px;
-      min-height: 160px;
+      height: 130px;
       resize: none;
       background: transparent;
       color: var(--text-color);
@@ -347,10 +338,13 @@ input:-webkit-autofill:active {
     }
 
     .auth-heading {
+      font-family: "Source Serif 4", serif;
       font-size: 150px;
+      line-height: 0.9;
       font-weight: 500;
-      margin: 0 0 40px;
-      color: #333;
+      margin: 30px 0;
+      padding-bottom: 40px;
+justify-self: center;
     }
 
     .auth-form {
@@ -358,13 +352,14 @@ input:-webkit-autofill:active {
       flex-direction: column;
       gap: 20px;
       max-width: 480px;
-      padding-top:40px;
+      padding-top: 100px;
       margin: 0 auto;
     }
 
     .auth-form input {
       font-family: inherit;
       font-size: var(--text-size);
+      font-weight: 400;
       background: none;
       border: none;
       border-bottom: 1px solid #ddd;
@@ -379,13 +374,14 @@ input:-webkit-autofill:active {
 
     .auth-actions {
       display: flex;
-      justify-content: space-between;
+      justify-content: center; /* center single sign-in button */
       margin-top: 20px;
     }
 
     .auth-actions button {
       font-family: inherit;
       font-size: var(--text-size);
+      font-weight: 400;
       padding: 8px 22px;
       border: 1px solid #ddd;
       cursor: pointer;
@@ -400,6 +396,7 @@ input:-webkit-autofill:active {
       margin-top: 20px;
       color: #999;
       font-size: var(--text-size);
+      font-weight: 400;
       display: none; /* only show when there's a message */
     }
   </style>
@@ -416,7 +413,6 @@ input:-webkit-autofill:active {
 
         <div class="auth-actions">
           <button type="button" id="auth-signin">Sign in</button>
-          <button type="button" id="auth-signup">Sign up</button>
         </div>
       </form>
 
@@ -548,7 +544,6 @@ input:-webkit-autofill:active {
     const authStatus = document.getElementById("auth-status");
     const authUserEmail = document.getElementById("auth-user-email");
     const authSignInBtn = document.getElementById("auth-signin");
-    const authSignUpBtn = document.getElementById("auth-signup");
 
     function setAuthStatus(msg) {
       if (!authStatus) return;
@@ -733,8 +728,7 @@ input:-webkit-autofill:active {
 
     // --- Auth logic ---
     function setAuthBusy(isBusy) {
-      const btns = [authSignInBtn, authSignUpBtn];
-      btns.forEach(b => b.disabled = !!isBusy);
+      authSignInBtn.disabled = !!isBusy;
     }
 
     auth.onAuthStateChanged((user) => {
@@ -788,42 +782,11 @@ input:-webkit-autofill:active {
             err.code === "auth/invalid-credential" ||
             err.code === "auth/invalid-login-credentials"
           ) {
-            setAuthStatus("No account found for that email. Use 'Sign up' first.");
+            setAuthStatus("No account found for that email.");
           } else if (err.code === "auth/wrong-password") {
             setAuthStatus("Incorrect password.");
           } else {
             setAuthStatus(err.message || "Authentication error.");
-          }
-        })
-        .finally(() => setAuthBusy(false));
-    });
-
-    authSignUpBtn.addEventListener("click", () => {
-      const email = authEmail.value.trim();
-      const password = authPassword.value;
-
-      if (!email || !password) {
-        setAuthStatus("Enter email and password to create an account.");
-        return;
-      }
-
-      setAuthBusy(true);
-      setAuthStatus("Creating account...");
-
-      auth
-        .createUserWithEmailAndPassword(email, password)
-        .then(() => {
-          setAuthStatus("");
-        })
-        .catch((err) => {
-          console.error("Sign-up error:", err);
-
-          if (err.code === "auth/email-already-in-use") {
-            setAuthStatus("That email already has an account. Use 'Sign in' instead.");
-          } else if (err.code === "auth/weak-password") {
-            setAuthStatus("Password is too weak. Try something longer/stronger.");
-          } else {
-            setAuthStatus(err.message || "Could not create account.");
           }
         })
         .finally(() => setAuthBusy(false));

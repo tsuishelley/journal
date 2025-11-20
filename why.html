@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>I'm too tired to journal.</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" type="image/png" sizes="28x28" href="favicon.svg">
+
+
+  <!-- Source Serif 4 + Source Code Pro -->
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,200..900;1,8..60,200..900&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+        --text-color: #444;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0 0 100px 0;
+      padding: 0;
+      font-family: "Source Serif 4", serif;
+      font-weight: 350;
+      font-size: 24px;
+      line-height: 150%;
+      color: var(--text-color);
+    }
+
+    .page {
+      max-width: 760px;
+      margin: 0 auto;
+    }
+
+    .hero-title {
+      font-size: 150px;
+      line-height: 0.9;
+      font-weight: 500;
+      margin: 30px 0;
+      padding-bottom: 40px;
+justify-self: center;    }
+
+    .divider {
+      border: none;
+      border-top: 1px solid rgba(0, 0, 0, 0.06);
+      margin: 0 0 16px;
+    }
+
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: "Source Code Pro", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 12px;
+      text-transform: uppercase;
+      opacity: 0.5;
+      margin-bottom: 50px;
+      white-space: nowrap;
+    }
+
+    .meta-row a {
+      text-decoration: underline;
+      color: inherit;
+    }
+
+    p {
+      margin: 0 0 24px;
+    }
+
+
+    /* Product shot */
+    .product-shot-card {
+      background: #ffffff;
+      border-radius: 18px;
+      padding: 0;
+      margin: 72px 0 40px;
+      box-shadow:
+        0 16px 35px rgba(0, 0, 0, 0.06),
+        0 0 0 1px rgba(0, 0, 0, 0.02);
+      overflow: hidden;
+    }
+
+    .product-shot-card img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .closing-copy {
+      margin-top: 40px;
+    }
+
+    /* Small-screen adjustments */
+    @media (max-width: 900px) {
+      .hero-title {
+        font-size: 96px;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .page {
+        padding: 32px 18px 72px;
+      }
+
+      .hero-title {
+        font-size: 72px;
+      }
+
+      .card,
+      .product-shot-card {
+        margin: 40px 0;
+        border-radius: 14px;
+        padding: 24px 20px;
+      }
+
+      .card-title {
+        font-size: 16px;
+      }
+
+      .rating-row {
+        gap: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+    <h1 class="hero-title">I’m too tired to journal.</h1>
+
+  <main class="page">
+
+    <hr class="divider" />
+
+    <div class="meta-row">
+      <span>BUILT DURING A DEPRESSION EPISODE</span>
+      <a href="mailto:hello@example.com">EMAIL IF YOU’RE TIRED TOO</a>
+    </div>
+
+    <section class="intro">
+      <p>
+        At the end of the day or during a bout of depression or anxiety it all feels
+        superfluous. But as someone who struggles with mental health, I know it’s
+        important to track things. To understand what’s working and what isn’t.
+      </p>
+      <p>
+        It’s hard to journal. Sometimes I don’t know what to say. Sometimes I don’t
+        have the energy to even voice my feelings, or figure out what they are.
+      </p>
+      <p>
+        You know how they ask you at the hospital for what your pain is like on a scale
+        from 1–10? I just want to do that for my days. How was my day, bad to good, on
+        a scale from 1–10.
+      </p>
+    </section>
+    <section class="product-shot-card">
+        <img src="https://via.placeholder.com/1200x600.png?text=Product+Shot+Placeholder" alt="Product shot placeholder" />
+      </section>
+
+    <p>
+      I don’t want to feel pressure to write too much. I don’t want to see a big box or
+      big blank page that demands me to fill it out.
+    </p>
+
+    <!-- “Some things that happened…” card -->
+    <section class="product-shot-card">
+        <img src="https://via.placeholder.com/1200x600.png?text=Product+Shot+Placeholder" alt="Product shot placeholder" />
+      </section>
+
+    <p>
+      I just want to write the bare minimum about my day and not feel guilty or
+      embarrassed if it’s barely anything at all.
+    </p>
+
+    <!-- Product shot placeholder -->
+    <section class="product-shot-card">
+      <img src="https://via.placeholder.com/1200x600.png?text=Product+Shot+Placeholder" alt="Product shot placeholder" />
+    </section>
+
+    <div class="closing-copy">
+      <p>I’m too tired to spend too much time overthinking my own thoughts.</p>
+      <p>I’m too tired to journal.</p>
+    </div>
+  </main>
+</body>
+</html>
