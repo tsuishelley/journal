@@ -6,14 +6,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" type="image/png" sizes="28x28" href="favicon.svg">
 
-  <!-- Inter -->
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,200..900;1,8..60,200..900&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
   <!-- Firebase v8 SDK (Auth + Firestore) -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-  
 
   <style>
     :root {
@@ -40,7 +40,7 @@
 
     body {
       font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      font-weight: 400; /* regular */
+      font-weight: 400;
       font-size: var(--text-size);
       margin: 0;
       padding: 0;
@@ -191,7 +191,7 @@
       background: none;
       padding: 0;
       color: var(--text-color);
-      font-weight: 400; /* regular */
+      font-weight: 400;
     }
 
     button.danger {
@@ -289,6 +289,28 @@
       margin-top: 6px;
     }
 
+    /* Remember checkbox */
+    .remember-row {
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: var(--text-size);
+    }
+
+    .remember-row input[type="checkbox"] {
+      cursor: pointer;
+      width: 16px;
+      height: 16px;
+    }
+
+    .remember-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+
     .form-actions {
       margin-top: 32px;
       display: flex;
@@ -337,7 +359,15 @@
       width: 100%;
     }
 
-    .auth-heading { font-family: "Source Serif 4", serif; font-size: 150px; line-height: 0.9; font-weight: 500; margin: 30px 0; padding-bottom: 40px; justify-self: center; }
+    .auth-heading {
+      font-family: "Source Serif 4", serif;
+      font-size: 150px;
+      line-height: 0.9;
+      font-weight: 500;
+      margin: 30px 0;
+      padding-bottom: 40px;
+      justify-self: center;
+    }
 
     .auth-form {
       display: flex;
@@ -367,7 +397,7 @@
 
     .auth-actions {
       display: flex;
-      justify-content: center; /* center single sign-in button */
+      justify-content: center;
       margin-top: 20px;
     }
 
@@ -390,7 +420,7 @@
       color: #999;
       font-size: var(--text-size);
       font-weight: 400;
-      display: none; /* only show when there's a message */
+      display: none;
     }
   </style>
 </head>
@@ -466,6 +496,14 @@
                   placeholder="Start typing here."
                 ></textarea>
                 <div class="char-counter" id="highlights-counter">0 / 300</div>
+
+                <!-- NEW: Remember this day checkbox -->
+                <div class="remember-row">
+                  <label class="remember-label">
+                    <input type="checkbox" id="remember-day" />
+                    <span>Remember this day.</span>
+                  </label>
+                </div>
               </div>
 
               <div class="form-actions">
@@ -527,6 +565,7 @@
     const highlightsInput = document.getElementById("highlights");
     const highlightsCounter = document.getElementById("highlights-counter");
     const moodRadios = Array.from(document.querySelectorAll('input[name="mood"]'));
+    const rememberCheckbox = document.getElementById("remember-day");
 
     const appEl = document.getElementById("app");
     const authScreenEl = document.getElementById("auth-screen");
@@ -573,16 +612,20 @@
       if (!col) {
         setSelectedMood("");
         highlightsInput.value = "";
+        rememberCheckbox.checked = false;
         updateHighlightsCounter();
         saveStatus.textContent = "Sign in to load and save entries.";
         return;
       }
 
       col.doc(iso).get().then((doc) => {
-        const entry = doc.exists ? doc.data() : { mood: "", highlights: "" };
+        const entry = doc.exists
+          ? doc.data()
+          : { mood: "", highlights: "", remember: false };
 
         setSelectedMood(entry.mood || "");
         highlightsInput.value = entry.highlights || "";
+        rememberCheckbox.checked = !!entry.remember;
         updateHighlightsCounter();
         saveStatus.textContent = "";
       }).catch((err) => {
@@ -603,6 +646,7 @@
       const entry = {
         mood: getSelectedMood(),
         highlights: highlightsInput.value.trim(),
+        remember: rememberCheckbox.checked,
         updatedAt: new Date().toISOString(),
       };
 
@@ -649,6 +693,7 @@
 
         setSelectedMood("");
         highlightsInput.value = "";
+        rememberCheckbox.checked = false;
         updateHighlightsCounter();
         renderEntryList();
 
@@ -684,15 +729,25 @@
           return;
         }
 
-        const dates = [];
-        snapshot.forEach((doc) => dates.push(doc.id));
-        dates.sort().reverse();
+        const items = [];
+        snapshot.forEach((doc) => {
+          const data = doc.data() || {};
+          items.push({
+            id: doc.id,
+            remember: !!data.remember,
+          });
+        });
 
-        dates.forEach((iso) => {
+        // newest first
+        items.sort((a, b) => (a.id < b.id ? 1 : -1));
+
+        items.forEach((item) => {
+          const iso = item.id;
           const li = document.createElement("li");
           const btn = document.createElement("button");
 
-          btn.textContent = prettyDate(iso);
+          const star = item.remember ? "★ " : "";
+          btn.textContent = star + prettyDate(iso);
 
           if (iso === todayIso) {
             btn.classList.add("current-day");
