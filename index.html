@@ -110,6 +110,11 @@
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      cursor: pointer;           /* NEW: pointer on hover target */
+    }
+
+    .sidebar-email:hover {        /* NEW: underline on hover */
+      text-decoration: underline;
     }
 
     .logout-icon {
@@ -422,6 +427,83 @@
       font-weight: 400;
       display: none;
     }
+
+    /* --- Stats modal --- */
+    .stats-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.2);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+    }
+
+    .stats-modal {
+      background: #fff;
+      border-radius: 8px;
+      max-width: 420px;
+      width: 90%;
+      padding: 16px 18px 14px;
+      font-size: var(--text-size);
+    }
+
+    .stats-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .stats-modal-title {
+      font-weight: 500;
+    }
+
+    .stats-modal-close {
+      border: none;
+      background: none;
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .stats-modal-close:hover {
+      opacity: 0.7;
+    }
+
+    .stats-modal-section {
+      margin-top: 30px;
+    }
+
+    .stats-modal-section h3 {
+      margin: 0 0 4px;
+      font-size: var(--text-size);
+      font-weight: 500;
+    }
+
+    .stats-modal-section p {
+      margin: 0;
+    }
+
+    .stats-modal-meta {
+      color: var(--muted);
+      font-size: var(--text-size);
+      margin-top: 4px;
+    }
+
+    .stats-modal-month-list {
+      list-style: none;
+      padding: 0;
+      margin: 4px 0 0;
+    }
+
+    .stats-modal-month-list li {
+      margin: 2px 0;
+    }
+
+    #stats-lowest-month {
+      margin-top:20px;
+    }
   </style>
 </head>
 <body>
@@ -473,7 +555,7 @@
           <section class="journal-inner">
             <form id="journal-form">
               <div class="field">
-                <label>Today I'm feeling...</label>
+                <label>Today I'm at a...</label>
                 <div class="mood-group" id="mood-group">
                   <label><input type="radio" name="mood" value="1">1</label>
                   <label><input type="radio" name="mood" value="2">2</label>
@@ -497,7 +579,7 @@
                 ></textarea>
                 <div class="char-counter" id="highlights-counter">0 / 300</div>
 
-                <!-- NEW: Remember this day checkbox -->
+                <!-- Remember this day checkbox -->
                 <div class="remember-row">
                   <label class="remember-label">
                     <input type="checkbox" id="remember-day" />
@@ -515,6 +597,34 @@
           </section>
         </div>
       </main>
+    </div>
+  </div>
+
+  <!-- Stats modal -->
+  <div id="stats-modal" class="stats-modal-backdrop">
+    <div class="stats-modal">
+      <div class="stats-modal-header">
+        <div class="stats-modal-title">Journal Stats</div>
+        <button type="button" class="stats-modal-close" id="stats-close" aria-label="Close stats">×</button>
+      </div>
+
+      <div class="stats-modal-section">
+        <h3>Entries</h3>
+        <p><strong id="stats-total-entries">0</strong> total entries</p>
+      </div>
+
+      <div class="stats-modal-section">
+        <h3>Average mood</h3>
+        <p>Overall: <strong id="stats-overall-mood">—</strong></p>
+      </div>
+
+      <div class="stats-modal-section">
+        <h3>Average mood by month</h3>
+        <ul id="stats-monthly-list" class="stats-modal-month-list">
+          <!-- Filled in by JS -->
+        </ul>
+        <p id="stats-lowest-month" class="stats-modal-meta"></p>
+      </div>
     </div>
   </div>
 
@@ -555,6 +665,17 @@
       });
     }
 
+    // For "January 2025"-style month labels
+    function prettyYearMonth(ym) {
+      const parts = ym.split("-");
+      if (parts.length !== 2) return ym;
+      const year = Number(parts[0]);
+      const month = Number(parts[1]);
+      if (!year || !month) return ym;
+      const d = new Date(year, month - 1, 1);
+      return d.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+    }
+
     // --- State ---
     let currentDate = new Date();
     let currentUser = null;
@@ -575,6 +696,14 @@
     const authStatus = document.getElementById("auth-status");
     const authUserEmail = document.getElementById("auth-user-email");
     const authSignInBtn = document.getElementById("auth-signin");
+
+    // Stats modal elements
+    const statsModal = document.getElementById("stats-modal");
+    const statsCloseBtn = document.getElementById("stats-close");
+    const statsTotalEntriesEl = document.getElementById("stats-total-entries");
+    const statsOverallMoodEl = document.getElementById("stats-overall-mood");
+    const statsMonthlyListEl = document.getElementById("stats-monthly-list");
+    const statsLowestMonthEl = document.getElementById("stats-lowest-month");
 
     function setAuthStatus(msg) {
       if (!authStatus) return;
@@ -773,6 +902,108 @@
       highlightsCounter.textContent = `${len} / 300`;
     }
 
+    // --- Stats modal logic ---
+    function openStatsModal() {
+      const col = getEntriesCollection();
+
+      if (!col || !currentUser) {
+        statsTotalEntriesEl.textContent = "0";
+        statsOverallMoodEl.textContent = "—";
+        statsMonthlyListEl.innerHTML = "<li>No data yet.</li>";
+        statsLowestMonthEl.textContent = "";
+        statsModal.style.display = "flex";
+        return;
+      }
+
+      col.get().then((snapshot) => {
+        if (snapshot.empty) {
+          statsTotalEntriesEl.textContent = "0";
+          statsOverallMoodEl.textContent = "—";
+          statsMonthlyListEl.innerHTML = "<li>No entries yet.</li>";
+          statsLowestMonthEl.textContent = "";
+          statsModal.style.display = "flex";
+          return;
+        }
+
+        let totalEntries = 0;
+        let moodSum = 0;
+        let moodCount = 0;
+        const monthStats = {};
+
+        snapshot.forEach((doc) => {
+          totalEntries++;
+          const data = doc.data() || {};
+          const moodNum = parseFloat(data.mood);
+
+          if (!isNaN(moodNum)) {
+            moodSum += moodNum;
+            moodCount++;
+
+            const monthKey = doc.id.slice(0, 7); // "YYYY-MM"
+            if (!monthStats[monthKey]) {
+              monthStats[monthKey] = { sum: 0, count: 0, max: moodNum, min: moodNum };
+            } else {
+              monthStats[monthKey].sum += moodNum;
+              monthStats[monthKey].count += 1;
+              if (moodNum > monthStats[monthKey].max) monthStats[monthKey].max = moodNum;
+              if (moodNum < monthStats[monthKey].min) monthStats[monthKey].min = moodNum;
+            }
+          }
+        });
+
+        const overallAvg = moodCount ? (moodSum / moodCount).toFixed(1) : "—";
+
+        statsTotalEntriesEl.textContent = String(totalEntries);
+        statsOverallMoodEl.textContent = overallAvg;
+
+        statsMonthlyListEl.innerHTML = "";
+        const months = Object.keys(monthStats).sort();
+
+        if (!months.length) {
+          statsMonthlyListEl.innerHTML = "<li>No mood data yet.</li>";
+          statsLowestMonthEl.textContent = "";
+        } else {
+          let lowestMonthKey = null;
+          let lowestMonthAvg = null;
+
+          months.forEach((key) => {
+            const { sum, count, max, min } = monthStats[key];
+            const avg = sum / count;
+            const avgStr = avg.toFixed(1);
+
+            const li = document.createElement("li");
+            li.textContent = `${prettyYearMonth(key)}: ${avgStr} (high ${max}, low ${min})`;
+            statsMonthlyListEl.appendChild(li);
+
+            if (lowestMonthAvg === null || avg < lowestMonthAvg) {
+              lowestMonthAvg = avg;
+              lowestMonthKey = key;
+            }
+          });
+
+          if (lowestMonthKey) {
+            statsLowestMonthEl.textContent =
+              `Lowest average: ${prettyYearMonth(lowestMonthKey)} (${lowestMonthAvg.toFixed(1)})`;
+          } else {
+            statsLowestMonthEl.textContent = "";
+          }
+        }
+
+        statsModal.style.display = "flex";
+      }).catch((err) => {
+        console.error("Error loading stats:", err);
+        statsTotalEntriesEl.textContent = "0";
+        statsOverallMoodEl.textContent = "—";
+        statsMonthlyListEl.innerHTML = "<li>Could not load stats.</li>";
+        statsLowestMonthEl.textContent = "";
+        statsModal.style.display = "flex";
+      });
+    }
+
+    function closeStatsModal() {
+      statsModal.style.display = "none";
+    }
+
     // --- Auth logic ---
     function setAuthBusy(isBusy) {
       authSignInBtn.disabled = !!isBusy;
@@ -866,6 +1097,27 @@
     document.getElementById("delete-btn").addEventListener("click", deleteCurrentEntry);
 
     highlightsInput.addEventListener("input", updateHighlightsCounter);
+
+    // Open stats when clicking the email
+    authUserEmail.addEventListener("click", () => {
+      if (!currentUser) return;
+      openStatsModal();
+    });
+
+    // Modal close handlers
+    statsCloseBtn.addEventListener("click", closeStatsModal);
+
+    statsModal.addEventListener("click", (e) => {
+      if (e.target === statsModal) {
+        closeStatsModal();
+      }
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && statsModal.style.display === "flex") {
+        closeStatsModal();
+      }
+    });
 
     // initialize counter on load
     updateHighlightsCounter();
